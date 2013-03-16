@@ -122,7 +122,7 @@ function simpleoauth_admin_form_submit($form, $form_state) {
 			'appkey' => $appkey,
 			'appname' => $appname,
 			'token' => uniqid(),
-			'expire_time' => time()+1800,
+			'expire_time' => time()+7200,
 		))->execute();
 	}
 }
@@ -150,7 +150,7 @@ function simpleoauth_callback_access() {
 	} else {
 		// else access_token is must have.
 		if(empty($GET['access_token'])) return FALSE;
-		$appkey=db_select('simpleoauth','s')->condition('s.token',$GET['access_token'])->condition('expire_time',time(),'<')->fields('s',array('appkey'))->execute()->fetchField();
+		$appkey=db_select('simpleoauth','s')->condition('s.token',$GET['access_token'])->condition('expire_time',time(),'>')->fields('s',array('appkey'))->execute()->fetchField();
 		if(empty($appkey)) return FALSE;
 		$GET['key']=$appkey;
 		return _simpleoauth_sign($GET, $_GET['sign']);
@@ -165,7 +165,7 @@ function simpleoauth_callback() {
 			->condition('s.expire_time',time(),'>')->fields('s',array('token', 'expire_time'));
 		$r=$query->execute()->fetchAssoc();
 		if(empty($r)) {
-			$r=array('token'=>uniqid(), 'expire_time'=>time()+1800);
+			$r=array('token'=>uniqid(), 'expire_time'=>time()+7200);
 			db_update('simpleoauth')->condition('appid',$appid)->fields(array(
 				'token' => $r['token'],
 				'expire_time' => $r['expire_time'],
@@ -199,6 +199,6 @@ function simpleoauth_callback() {
 function simpleoauth_cron() {
 	db_update('simpleoauth')->condition('expire_time',time(),'>')->fields(array(
 		'token' => uniqid(),
-		'expire_time' => time()+1800,
+		'expire_time' => time()+7200,
 	))->execute();
 }
