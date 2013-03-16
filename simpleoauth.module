@@ -8,3 +8,137 @@
  * @file
  * Provides simple oauth implementation on pure server side.
  */
+
+/**
+ * Implementation of hook_help().
+ */
+function simpleoauth_help($path, $arg) {
+	switch ($path) {
+		case 'admin/config/services/simpleoauth':
+			$output = t('In this page, you could configure 3rd-party website access via simple oauth.');
+			break;
+		default: return;
+	}
+	return $output;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function simpleoauth_menu() {
+	$items['admin/config/services/simpleoauth'] = array(
+		'title' => 'Simple OAuth settings',
+		'description' => 'Simple OAuth 3rd-party access settings.',
+		'access arguments' => array('access administration pages'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('simpleoauth_admin_form'),
+	);
+	$items['simpleoauth'] = array(
+		'access callback' => 'simpleoauth_callback_access',
+		'type' => MENU_CALLBACK,
+		'page callback' => 'simpleoauth_callback',
+	);
+	return $items;
+}
+
+function simpleoauth_admin_form($form, $form_state) {
+	$form=array(
+		'#submit' => array('simpleoauth_admin_form_submit'),
+		'#validate' => array('simpleoauth_admin_form_validate'),
+	);
+	$header=array(
+		'appid' => array('data' => t('App ID')),
+		'secret' => array('data' => t('App Secret')),
+		'name' => array('data' => t('App Name')),
+	);
+	$options=array();
+	$query=db_select('simpleoauth','s')->fields('s')->orderBy('s.appid');
+	$result=$query->execute();
+	foreach($result as $r) {
+		$options[$r->appid]=array(
+			'appid' => $r->appid,
+			'secret' => $r->appkey,
+			'name' => $r->appname,
+		);
+	}
+	if(!empty($options)) {
+		$form['info']=array(
+			'#type' => 'item',
+			'#title' => t('Existing Apps to delete'),
+			'#description' => t('If you want to delete some of apps, please select them.'),
+		);
+		$form['existsinapps']=array(
+			'#type' => 'tableselect',
+			'#header' => $header,
+			'#options' => $options,
+			'#empty' => t('No existing apps'),
+		);
+	}
+
+	$form['addprefix']=array(
+		'#type' => 'markup',
+		'#markup' => '<div class="container-inline"><br/>',
+	);
+	$form['selecttoadd']=array(
+		'#type' => 'checkbox',
+		'#title' => empty($options)?t('Select to add your first 3rd-party app in the name of'):t('Select to add another app in the name of'),
+	);
+	
+	$form['appname']=array(
+		'#type' => 'textfield',
+		'#title' => t('App Name'),
+		'#title_display' => 'invisible',
+		'#maxlength' => 30,
+		'#size' => 20,
+		'#states' => array(
+			'visible' => array(':input[name="selecttoadd"]' => array('checked' => TRUE)),
+			'required' => array(':input[name="selecttoadd"]' => array('checked' => TRUE)),
+		),
+	);
+	$form['addsuffix']=array(
+		'#type' => 'markup',
+		'#markup' => '</div>',
+	);
+	return system_settings_form($form);
+}
+
+function simpleoauth_admin_form_validate($form, $form_state) {
+	$appname=trim($form_state['values']['appname']);
+	if($form_state['values']['selecttoadd']==1 && empty($appname))
+		form_set_error('appname', t('!name field is required.',array('!name' => $form['appname']['#title'])));
+}
+
+function simpleoauth_admin_form_submit($form, $form_state) {
+	$appstodelete=array_values($form_state['values']['existsinapps']);
+	foreach($appstodelete as $app) {
+		db_delete('simpleoauth')->condition('appid',$app)->execute();
+	}
+	if($form_state['values']['selecttoadd']==1) {
+		$uniqid=explode('.',uniqid(variable_get('zhaoban_current_year',date('Y')),TRUE));
+		$appid=$uniqid[0];
+		$appkey=$uniqid[1];
+		$appname=trim($form_state['values']['appname']);
+		db_insert('simpleoauth')->fields(array(
+			'appid' => $appid,
+			'appkey' => $appkey,
+			'appname' => $appname,
+			'token' => uniqid(),
+			'expire_time' => time()+1800,
+		))->execute();
+	}
+}
+
+function simpleoauth_callback_access() {
+	return TRUE;
+}
+
+function simpleoauth_callback() {
+	return;
+}
+
+function simpleoauth_cron() {
+	db_update('simpleoauth')->condition('expire_time',time(),'>')->fields(array(
+		'token' => uniqid(),
+		'expire_time' => time()+1800,
+	))->execute();
+}
