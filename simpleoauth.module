@@ -1,0 +1,10 @@
+<?php
+
+/*
+ * This file is licensed under GPLv2+.
+*/
+
+/**
+ * @file
+ * Provides simple oauth implementation on pure server side.
+ */

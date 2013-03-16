@@ -1,0 +1,5 @@
+name = Simple OAuth implementation
+description = Provides simple oauth implementation on pure server side.
+core = 7.x
+
+version = 0.1.20130316
