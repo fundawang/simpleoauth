@@ -101,14 +101,13 @@ function simpleoauth_admin_form($form, $form_state) {
 	);
 	return system_settings_form($form);
 }
-
 function simpleoauth_admin_form_validate($form, $form_state) {
 	$appname=trim($form_state['values']['appname']);
 	if($form_state['values']['selecttoadd']==1 && empty($appname))
 		form_set_error('appname', t('!name field is required.',array('!name' => $form['appname']['#title'])));
 }
 
-function simpleoauth_admin_form_submit($form, $form_state) {
+function simpleoauth_admin_form_submit($form, $form_state) { 
 	$appstodelete=array_values($form_state['values']['existsinapps']);
 	foreach($appstodelete as $app) {
 		db_delete('simpleoauth')->condition('appid',$app)->execute();
@@ -128,12 +127,62 @@ function simpleoauth_admin_form_submit($form, $form_state) {
 	}
 }
 
+function _simpleoauth_sign($input, $sign=NULL) {
+	sort($input);
+	$md5sum=md5(implode('',$input));
+	if(empty($sign)) return $md5sum;
+	else return $sign==$md5sum; 
+}
+
 function simpleoauth_callback_access() {
-	return TRUE;
+	$GET=$_GET;
+	unset($GET['q']);
+	unset($GET['sign']);
+	unset($GET['op']);
+	if($_SERVER['REQUEST_METHOD']=='POST' || empty($GET) || empty($_GET['sign'])) return FALSE;
+	if(empty($GET['access_token']) && $_GET['op']=='acess_grant') {
+		// When accessing access_grant interface, appid is must have.
+		if(empty($GET['appid'])) return FALSE;
+		$appkey=db_select('simpleoauth','s')->condition('s.appid',$GET['appid'])->fields('s',array('appkey'))->execute()->fetchField();
+		if(empty($appkey)) return FALSE;
+		$GET['key']=$appkey;
+		return _simpleoauth_sign($GET, $_GET['sign']);
+	} else {
+		// else access_token is must have.
+		if(empty($GET['access_token'])) return FALSE;
+		$appkey=db_select('simpleoauth','s')->condition('s.token',$GET['access_token'])->condition('expire_time',time(),'<')->fields('s',array('appkey'))->execute()->fetchField();
+		if(empty($appkey)) return FALSE;
+		$GET['key']=$appkey;
+		return _simpleoauth_sign($GET, $_GET['sign']);
+	}
 }
 
 function simpleoauth_callback() {
-	return;
+	$output=array();
+	if($_GET['op']=='acess_grant') {
+		$query=db_select('simpleoauth','s')->condition('s.appid',$_GET['appid'])
+			->condition('s.expire_time',time(),'>')->fields('s',array('token', 'expire_time'));
+		$r=$query->execute()->fetchAssoc();
+		if(empty($r)) {
+			$r=array('token'=>uniqid(), 'expire_time'=>time()+1800);
+			db_update('simpleoauth')->condition('appid',$_GET['appid'])->fields(array(
+				'token' => $r['token'],
+				'expire_time' => $r['expire_time'],
+			))->execute();
+		}
+		$output=array(
+			'status' => '0',
+			'access_token' => $r['token'],
+			'expire_time' => $r['expire_time']
+		);
+	}
+	$output['key']=db_select('simpleoauth','s')->condition('s.appid',$_GET['appid'])->fields('s',array('appkey'))->execute()->fetchField();
+	$output['sign']=_simpleoauth_sign($output);
+	
+	unset($output['key']);
+	drupal_add_http_header('Content-Type', 'application/json; charset=utf-8');
+	echo json_encode($output);
+	exit;
 }
 
 function simpleoauth_cron() {
