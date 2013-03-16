@@ -160,12 +160,13 @@ function simpleoauth_callback_access() {
 function simpleoauth_callback() {
 	$output=array();
 	if($_GET['op']=='access_grant') {
-		$query=db_select('simpleoauth','s')->condition('s.appid',$_GET['appid'])
+		$appid=$_GET['appid'];
+		$query=db_select('simpleoauth','s')->condition('s.appid',$appid)
 			->condition('s.expire_time',time(),'>')->fields('s',array('token', 'expire_time'));
 		$r=$query->execute()->fetchAssoc();
 		if(empty($r)) {
 			$r=array('token'=>uniqid(), 'expire_time'=>time()+1800);
-			db_update('simpleoauth')->condition('appid',$_GET['appid'])->fields(array(
+			db_update('simpleoauth')->condition('appid',$appid)->fields(array(
 				'token' => $r['token'],
 				'expire_time' => $r['expire_time'],
 			))->execute();
@@ -175,8 +176,18 @@ function simpleoauth_callback() {
 			'access_token' => $r['token'],
 			'expire_time' => $r['expire_time']
 		);
+	} else {
+		$appid=db_select('simpleoauth','s')->condition('s.token',$_GET['access_token'])
+			->condition('expire_time',time(),'<')->fields('s',array('appid'))->execute()->fetchField();
+		if(module_hook($_GET['op'],'simpleoauth')) ;
+		else {
+			$output=array(
+				'status' => '40001',
+				'errmsg' => t('Invalid operation.'),
+			);
+		}
 	}
-	$output['key']=db_select('simpleoauth','s')->condition('s.appid',$_GET['appid'])->fields('s',array('appkey'))->execute()->fetchField();
+	$output['key']=db_select('simpleoauth','s')->condition('s.appid',$appid)->fields('s',array('appkey'))->execute()->fetchField();
 	$output['sign']=_simpleoauth_sign($output);
 	
 	unset($output['key']);
