@@ -1,0 +1,6 @@
+Simple OAuth
+============
+
+This is simple implementation on pure server-side for oauth.
+Draft idea from Weixin Mass Platform at:
+http://mp.weixin.qq.com/wiki/index.php?title=%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3
