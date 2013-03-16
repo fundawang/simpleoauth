@@ -122,7 +122,7 @@ function simpleoauth_admin_form_submit($form, $form_state) {
 			'appkey' => $appkey,
 			'appname' => $appname,
 			'token' => uniqid(),
-			'expire_time' => time()+7200,
+			'expire_time' => time()+1800,
 		))->execute();
 	}
 }
@@ -165,7 +165,7 @@ function simpleoauth_callback() {
 			->condition('s.expire_time',time(),'>')->fields('s',array('token', 'expire_time'));
 		$r=$query->execute()->fetchAssoc();
 		if(empty($r)) {
-			$r=array('token'=>uniqid(), 'expire_time'=>time()+7200);
+			$r=array('token'=>uniqid(), 'expire_time'=>time()+1800);
 			db_update('simpleoauth')->condition('appid',$appid)->fields(array(
 				'token' => $r['token'],
 				'expire_time' => $r['expire_time'],
@@ -199,6 +199,6 @@ function simpleoauth_callback() {
 function simpleoauth_cron() {
 	db_update('simpleoauth')->condition('expire_time',time(),'>')->fields(array(
 		'token' => uniqid(),
-		'expire_time' => time()+7200,
+		'expire_time' => time()+1800,
 	))->execute();
 }
