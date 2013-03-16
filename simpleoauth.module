@@ -183,7 +183,7 @@ function simpleoauth_callback() {
 		else {
 			$output=array(
 				'status' => '40001',
-				'errmsg' => t('Invalid operation.'),
+				'errmsg' => 'Invalid operation.',
 			);
 		}
 	}
