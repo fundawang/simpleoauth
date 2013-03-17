@@ -140,7 +140,7 @@ function simpleoauth_callback_access() {
 	unset($GET['sign']);
 	unset($GET['op']);
 	if($_SERVER['REQUEST_METHOD']=='POST' || empty($GET) || empty($_GET['sign'])) return FALSE;
-	if(empty($GET['access_token']) && $_GET['op']=='access_grant') {
+	if(empty($GET['access_token']) && $_GET['op']=='grant_access') {
 		// When accessing access_grant interface, appid is must have.
 		if(empty($GET['appid'])) return FALSE;
 		$appkey=db_select('simpleoauth','s')->condition('s.appid',$GET['appid'])->fields('s',array('appkey'))->execute()->fetchField();
@@ -159,7 +159,7 @@ function simpleoauth_callback_access() {
 
 function simpleoauth_callback() {
 	$output=array();
-	if($_GET['op']=='access_grant') {
+	if($_GET['op']=='grant_access') {
 		$appid=$_GET['appid'];
 		$query=db_select('simpleoauth','s')->condition('s.appid',$appid)
 			->condition('s.expire_time',time(),'>')->fields('s',array('token', 'expire_time'));
@@ -183,7 +183,7 @@ function simpleoauth_callback() {
 		else {
 			$output=array(
 				'status' => '40001',
-				'errmsg' => 'Invalid operation.',
+				'errmsg' => base64_encode(t('Invalid operation.')),
 			);
 		}
 	}
