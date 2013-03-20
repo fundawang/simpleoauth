@@ -183,7 +183,7 @@ function simpleoauth_callback() {
 		else {
 			$output=array(
 				'status' => '40001',
-				'errmsg' => base64_encode(t('Invalid operation.')),
+				'errmsg' => t('Invalid operation.'),
 			);
 		}
 	}
@@ -192,7 +192,14 @@ function simpleoauth_callback() {
 	
 	unset($output['key']);
 	drupal_add_http_header('Content-Type', 'application/json; charset=utf-8');
-	echo json_encode($output);
+	
+	$code=drupal_json_encode($output);
+	if( version_compare(phpversion(), '5.4.0') < 0 ) {
+		$code=json_encode($output);
+		$code=preg_replace_callback('/\\\\u([0-9a-f]{4})/i', function($matches) { return mb_convert_encoding(pack('H*', $matches[1]), 'UTF-8', 'UTF-16'); }, $code); 
+	} else
+		$code=json_encode($output, JSON_UNESCAPED_UNICODE);
+	echo $code;
 	exit;
 }
 
