@@ -179,7 +179,13 @@ function simpleoauth_callback() {
 	} else {
 		$appid=db_select('simpleoauth','s')->condition('s.token',$_GET['access_token'])
 			->condition('expire_time',time(),'<')->fields('s',array('appid'))->execute()->fetchField();
-		if(module_hook($_GET['op'],'simpleoauth')) $output=module_invoke($_GET['op'], 'simpleoauth', $_GET);
+		if(module_hook($_GET['op'],'simpleoauth')) {
+			$GET=$_GET;
+			unset($GET['q']);
+			unset($GET['sign']);
+			unset($GET['op']);
+			$output=module_invoke($_GET['op'], 'simpleoauth', $GET);
+		}
 		else {
 			$output=array(
 				'status' => '40001',
