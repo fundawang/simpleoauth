@@ -178,13 +178,13 @@ function simpleoauth_callback() {
 		);
 	} else {
 		$appid=db_select('simpleoauth','s')->condition('s.token',$_GET['access_token'])
-			->condition('expire_time',time(),'<')->fields('s',array('appid'))->execute()->fetchField();
+			->condition('s.expire_time',time(),'>')->fields('s',array('appid'))->execute()->fetchField();
 		if(module_hook($_GET['op'],'simpleoauth')) {
 			$GET=$_GET;
 			unset($GET['q']);
 			unset($GET['sign']);
 			unset($GET['op']);
-			$output=module_invoke($_GET['op'], 'simpleoauth', $GET);
+			$output=module_invoke($_GET['op'], 'simpleoauth', $GET, $appid);
 		}
 		else {
 			$output=array(
@@ -207,6 +207,12 @@ function simpleoauth_callback() {
 		$code=json_encode($output, JSON_UNESCAPED_UNICODE);
 	echo $code;
 	exit;
+}
+
+function simpleoauth_get_appname($appid) {
+	$appname=db_select('simpleoauth','s')->condition('s.appid',$appid)->fields('s',array('appname'))->execute()->fetchField();
+	if(empty($appname)) return FALSE;
+	else return $appname;
 }
 
 function simpleoauth_cron() {
