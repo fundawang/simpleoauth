@@ -113,7 +113,7 @@ function simpleoauth_admin_form_submit($form, $form_state) {
 		db_delete('simpleoauth')->condition('appid',$app)->execute();
 	}
 	if($form_state['values']['selecttoadd']==1) {
-		$appid=variable_get('zhaoban_current_year',date('Y')).bin2hex(openssl_random_pseudo_bytes(6));
+		$appid=variable_get('zhaoban_current_year',date('Y')).bin2hex(openssl_random_pseudo_bytes(7));
 		$appkey=bin2hex(openssl_random_pseudo_bytes(4));
 		$appname=trim($form_state['values']['appname']);
 		db_insert('simpleoauth')->fields(array(
