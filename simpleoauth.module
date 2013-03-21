@@ -113,15 +113,14 @@ function simpleoauth_admin_form_submit($form, $form_state) {
 		db_delete('simpleoauth')->condition('appid',$app)->execute();
 	}
 	if($form_state['values']['selecttoadd']==1) {
-		$uniqid=explode('.',uniqid(variable_get('zhaoban_current_year',date('Y')),TRUE));
-		$appid=$uniqid[0];
-		$appkey=$uniqid[1];
+		$appid=variable_get('zhaoban_current_year',date('Y')).bin2hex(openssl_random_pseudo_bytes(6));
+		$appkey=bin2hex(openssl_random_pseudo_bytes(4));
 		$appname=trim($form_state['values']['appname']);
 		db_insert('simpleoauth')->fields(array(
 			'appid' => $appid,
 			'appkey' => $appkey,
 			'appname' => $appname,
-			'token' => uniqid(),
+			'token' => bin2hex(openssl_random_pseudo_bytes(8)),
 			'expire_time' => time()+1800,
 		))->execute();
 	}
@@ -165,7 +164,7 @@ function simpleoauth_callback() {
 			->condition('s.expire_time',time(),'>')->fields('s',array('token', 'expire_time'));
 		$r=$query->execute()->fetchAssoc();
 		if(empty($r)) {
-			$r=array('token'=>uniqid(), 'expire_time'=>time()+1800);
+			$r=array('token'=>bin2hex(openssl_random_pseudo_bytes(8)), 'expire_time'=>time()+1800);
 			db_update('simpleoauth')->condition('appid',$appid)->fields(array(
 				'token' => $r['token'],
 				'expire_time' => $r['expire_time'],
@@ -217,7 +216,9 @@ function simpleoauth_get_appname($appid) {
 
 function simpleoauth_cron() {
 	db_update('simpleoauth')->condition('expire_time',time(),'>')->fields(array(
-		'token' => uniqid(),
+		'token' => bin2hex(openssl_random_pseudo_bytes(8)),
 		'expire_time' => time()+1800,
 	))->execute();
 }
+
+?>
