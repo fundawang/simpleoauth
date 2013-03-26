@@ -130,7 +130,7 @@ function _simpleoauth_sign($input, $sign=NULL) {
 	sort($input);
 	$md5sum=md5(implode('',$input));
 	if(empty($sign)) return $md5sum;
-	else return $sign==$md5sum; 
+	else return $sign==$md5sum;
 }
 
 function simpleoauth_callback_access() {
@@ -149,7 +149,7 @@ function simpleoauth_callback_access() {
 	} else {
 		// else access_token is must have.
 		if(empty($GET['access_token'])) return FALSE;
-		$appkey=db_select('simpleoauth','s')->condition('s.token',$GET['access_token'])->condition('expire_time',time(),'>')->fields('s',array('appkey'))->execute()->fetchField();
+		$appkey=db_select('simpleoauth','s')->condition('s.token',$GET['access_token'])->fields('s',array('appkey'))->execute()->fetchField();
 		if(empty($appkey)) return FALSE;
 		$GET['key']=$appkey;
 		return _simpleoauth_sign($GET, $_GET['sign']);
@@ -176,9 +176,14 @@ function simpleoauth_callback() {
 			'expire_time' => $r['expire_time']
 		);
 	} else {
-		$appid=db_select('simpleoauth','s')->condition('s.token',$_GET['access_token'])
-			->condition('s.expire_time',time(),'>')->fields('s',array('appid'))->execute()->fetchField();
-		if(module_hook($_GET['op'],'simpleoauth')) {
+		$app=db_select('simpleoauth','s')->condition('s.token',$_GET['access_token'])->fields('s',array('appid','expire_time'))->execute()->fetchObject();
+		$appid=$app->appid;
+		if($app->expire_time < time()) {
+			$output = array(
+				'status' => '42001',
+				'errmsg' => t('Access Token expired.')
+			);
+		} else if(module_hook($_GET['op'],'simpleoauth')) {
 			$GET=$_GET;
 			unset($GET['q']);
 			unset($GET['sign']);
