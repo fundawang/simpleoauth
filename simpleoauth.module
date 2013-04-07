@@ -56,8 +56,8 @@ function simpleoauth_admin_form($form, $form_state) {
 	$result=$query->execute();
 	foreach($result as $r) {
 		$options[$r->appid]=array(
-			'appid' => $r->appid,
-			'secret' => $r->appkey,
+			'appid' => sprintf('<code>%s</code>',$r->appid),
+			'secret' => sprintf('<code>%s</code>',$r->appkey),
 			'name' => $r->appname,
 		);
 	}
@@ -81,13 +81,12 @@ function simpleoauth_admin_form($form, $form_state) {
 	);
 	$form['selecttoadd']=array(
 		'#type' => 'checkbox',
-		'#title' => empty($options)?t('Select to add your first 3rd-party app in the name of'):t('Select to add another app in the name of'),
+		'#title' => empty($options)?t('Select to add your first 3rd-party app,'):t('Select to add another app,'),
 	);
 	
 	$form['appname']=array(
 		'#type' => 'textfield',
-		'#title' => t('App Name'),
-		'#title_display' => 'invisible',
+		'#title' => t('in the name of'),
 		'#maxlength' => 30,
 		'#size' => 20,
 		'#states' => array(
@@ -104,7 +103,7 @@ function simpleoauth_admin_form($form, $form_state) {
 function simpleoauth_admin_form_validate($form, $form_state) {
 	$appname=trim($form_state['values']['appname']);
 	if($form_state['values']['selecttoadd']==1 && empty($appname))
-		form_set_error('appname', t('!name field is required.',array('!name' => $form['appname']['#title'])));
+		form_set_error('appname', t('!name field is required.',array('!name' => t('App Name'))));
 }
 
 function simpleoauth_admin_form_submit($form, $form_state) { 
