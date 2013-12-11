@@ -172,6 +172,7 @@ function simpleoauth_callback() {
 			'access_token' => $r['token'],
 			'expire_time' => $r['expire_time']
 		);
+		$output['key']=db_query('SELECT appkey FROM {simpleoauth} WHERE appid=:appid', array(':appid'=>$appid))->fetchField();
 	} else {
 		$app=db_query('SELECT appid, expire_time FROM {simpleoauth} WHERE token=:token', array(':token'=>$_GET['access_token']))->fetchObject();
 		if($app->expire_time < time()) {
@@ -192,8 +193,9 @@ function simpleoauth_callback() {
 				'errmsg' => t('Invalid operation.'),
 			);
 		}
+		$output['key']=db_query('SELECT appkey FROM {simpleoauth} WHERE appid=:appid', array(':appid'=>$app->appid))->fetchField();
 	}
-	$output['key']=db_query('SELECT appkey FROM {simpleoauth} WHERE appid=:appid', array(':appid'=>$app->appid))->fetchField();
+	
 	$output['sign']=_simpleoauth_sign($output);
 	
 	unset($output['key']);
