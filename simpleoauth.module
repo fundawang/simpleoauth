@@ -158,8 +158,8 @@ function simpleoauth_callback() {
 	$output=array();
 	if($_GET['op']=='grant_access') {
 		$appid=$_GET['appid'];
-		$r=db_query('SELECT EXISTS(SELECT * FROM {simpleoauth} WHERE appid=:appid AND expire_time>:expire_time)',
-			array(':appid'=>$appid, ':expire_time'=>time()))->fetchField();
+		$r=db_query('SELECT token, expire_time FROM {simpleoauth} WHERE appid=:appid AND expire_time>:expire_time',
+			array(':appid'=>$appid, ':expire_time'=>time()))->fetchAssoc();
 		if(empty($r)) {
 			$r=array('token'=>bin2hex(openssl_random_pseudo_bytes(8)), 'expire_time'=>time()+1800);
 			db_update('simpleoauth')->condition('appid',$appid)->fields(array(
