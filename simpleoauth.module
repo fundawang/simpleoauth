@@ -125,7 +125,7 @@ function simpleoauth_admin_form_submit($form, $form_state) {
 }
 
 function _simpleoauth_sign($input, $sign=NULL) {
-	sort($input);
+	sort($input, SORT_STRING);
 	$md5sum=md5(implode('',$input));
 	if(empty($sign)) return $md5sum;
 	else return $sign==$md5sum;
