@@ -212,7 +212,7 @@ function simpleoauth_callback() {
 }
 
 function simpleoauth_get_appname($appid) {
-	$appname=db_query('SELECT appname FROM {simpleoauth} WHERE appid=:appid', array(':appid'=>$app->appid))->fetchField();
+	$appname=db_query('SELECT appname FROM {simpleoauth} WHERE appid=:appid', array(':appid'=>$appid))->fetchField();
 	if(empty($appname)) return FALSE;
 	else return $appname;
 }
